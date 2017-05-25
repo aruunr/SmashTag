@@ -9,7 +9,7 @@
 import UIKit
 import Twitter
 
-class TweetTableViewController: UITableViewController {
+class TweetTableViewController: UITableViewController,UITextFieldDelegate {
 
     private var tweets = [Array<Tweet>]() {
         didSet{
@@ -19,15 +19,18 @@ class TweetTableViewController: UITableViewController {
     
     var searchTweet : String? {
         didSet{
-        tweets.removeAll()
-        tableView.reloadData()
-        searchForTweets()
-        title = searchTweet
+            //searchText
+            searchTextValue?.text = searchTweet
+            searchTextValue?.resignFirstResponder() //remove keyboard
+            tweets.removeAll()
+            tableView.reloadData()
+            searchForTweets()
+            title = searchTweet
         }
     }
 
     //return a Twitter request
-    
+
     private func twitterRequest() -> Twitter.Request?{
         if let query = searchTweet, !query.isEmpty {
             return Twitter.Request(search: query, count: 100)
@@ -51,9 +54,23 @@ class TweetTableViewController: UITableViewController {
         }
     }
     
+    @IBOutlet weak var searchTextValue: UITextField! {
+        didSet{
+            searchTextValue.delegate = self
+        }
+    }
+   
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == searchTextValue{
+            searchTweet = searchTextValue.text
+        }
+    return true
+    }
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        searchTweet = "#Apple"
     }
     
     
@@ -73,8 +90,12 @@ class TweetTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Tweet", for: indexPath)
             let tweet = tweets[indexPath.section][indexPath.row]
-            cell.textLabel?.text = tweet.text
-            cell.detailTextLabel?.text = tweet.user.name
+            if let tweetCell = cell as? TweetTableViewCell{
+                tweetCell.tweet = tweet
+            }
+        
+          //  cell.textLabel?.text = tweet.text
+           // cell.detailTextLabel?.text = tweet.user.name
         return cell
     }
     
