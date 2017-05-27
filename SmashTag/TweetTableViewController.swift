@@ -22,6 +22,7 @@ class TweetTableViewController: UITableViewController,UITextFieldDelegate {
             //searchText
             searchTextValue?.text = searchTweet
             searchTextValue?.resignFirstResponder() //remove keyboard
+            lastTwitterRequest = nil
             tweets.removeAll()
             tableView.reloadData()
             searchForTweets()
@@ -41,7 +42,7 @@ class TweetTableViewController: UITableViewController,UITextFieldDelegate {
     private var lastTwitterRequest : Twitter.Request?
     
     private func searchForTweets() {
-        if let request = twitterRequest() {
+        if let request = lastTwitterRequest?.newer ?? twitterRequest() {
             lastTwitterRequest = request
             request.fetchTweets {[weak self] newTweets in
                 DispatchQueue.main.async {
@@ -49,9 +50,16 @@ class TweetTableViewController: UITableViewController,UITextFieldDelegate {
                         self?.tweets.insert(newTweets, at: 0)
                         self?.tableView.insertSections([0], with: .fade)
                     }
+                    self?.refreshControl?.endRefreshing()
                 }
             }
+        }else {
+            self.refreshControl?.endRefreshing()
         }
+    }
+    
+    @IBAction func refresh(_ sender: UIRefreshControl) {
+        searchForTweets()
     }
     
     @IBOutlet weak var searchTextValue: UITextField! {
@@ -71,6 +79,8 @@ class TweetTableViewController: UITableViewController,UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        tableView.estimatedRowHeight = tableView.rowHeight
+        tableView.rowHeight = UITableViewAutomaticDimension
     }
     
     
